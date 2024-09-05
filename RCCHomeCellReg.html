@@ -224,13 +224,22 @@
             method: 'POST',
             //mode: 'no-cors',
             body: formData
-          }).then(response => response.json())
-            .then(data => {
-              document.getElementById('responseMessage').innerText = data.message;
-            })
-            .catch(error => {
-              console.error('Error:', error); // Log the error to the console
-              document.getElementById('responseMessage').innerText = 'An error occurred. Please try again.';
+          })
+          .then(response => {
+            // Check if the response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              return response.json();
+            } else {
+              throw new Error('Server response is not JSON');
+            }
+          })
+          .then(data => {
+            document.getElementById('responseMessage').innerText = data.message;
+          })
+          .catch(error => {
+            console.error('Error:', error); // Log the error to the console
+            document.getElementById('responseMessage').innerText = 'An error occurred. Please try again.';
             });
         });
     </script>
