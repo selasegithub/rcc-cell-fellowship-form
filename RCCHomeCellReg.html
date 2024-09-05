@@ -229,6 +229,7 @@
               document.getElementById('responseMessage').innerText = data.message;
             })
             .catch(error => {
+              console.error('Error:', error); // Log the error to the console
               document.getElementById('responseMessage').innerText = 'An error occurred. Please try again.';
             });
         });
