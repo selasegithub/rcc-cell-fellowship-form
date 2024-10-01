@@ -6,13 +6,13 @@
     <title>RCC Home Cell Fellowship Registration</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNIPH3XJcE6vDyBaMavbxyiGBmKEiQQak&libraries=places"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" async></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNIPH3XJcE6vDyBaMavbxyiGBmKEiQQak&loading=async&libraries=places&callback=initAutocomplete" async defer></script>
 </head>
 <body>
     <div class="container">
         <h4>RCC Home Cell Fellowship Registration</h4>
-        <form id="myHomeCellForm">
+        <form id="myHomeCellForm" action="" method="get" autocomplete="off">
             <div class="row">
                 <div class="input-field col s6">
                     <input id="first_name" name="first_name" type="text" class="validate" required>
@@ -82,40 +82,40 @@
                     <span class="helper-text" data-error="Invalid international phone number" data-success="Valid international phone number"></span>
                 </div>
             </div>
-            <div class="row">
+            <!--<div class="row">
                 <div class="input-field col s12">
                     <div id="locationField">
-                        <input id="autocomplete" name="address" type="text" required>
-                        <label for="autocomplete">Enter your address</label>
+                        <input id="address1_Field" name="address1-Field" type="text" required>
+                        <label for="address1_Field">Enter your address</label>
                     </div>
                 </div>
+            </div> -->
+            <div class="row">
+                <div class="input-field col s4">
+                    <input id="address1_Field" name="address1_Field" required>
+                    <label for="address1_Field">Address</label>
+                </div>
+                <div class="input-field col s4">
+                    <input id="address2_Field" name="address2_Field">
+                    <label for="address2_Field">Apartment, unit, suite, or floor #</label>
+                </div>
+                <div class="input-field col s4">
+                    <input id="locality" name="locality">
+                    <label for="locality">City*</label>
+                </div>
             </div>
             <div class="row">
                 <div class="input-field col s4">
-                    <input type="text" id="street_number" name="street_number" disabled="true">
-                    <label for="street_number">Street Address</label>
+                    <input id="state" name="state">
+                    <label for="state">State/Province*</label>
                 </div>
                 <div class="input-field col s4">
-                    <input type="text" id="route" name="route" disabled="true">
-                    <label for="route">Route</label>
+                    <input id="postcode" name="postcode">
+                    <label for="postcode">Postal code*</label>
                 </div>
                 <div class="input-field col s4">
-                    <input type="text" id="locality" name="locality" disabled="true">
-                    <label for="locality">City</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s4">
-                    <input type="text" id="administrative_area_level_1" name="administrative_area_level_1" disabled="true">
-                    <label for="administrative_area_level_1">State</label>
-                </div>
-                <div class="input-field col s4">
-                    <input type="text" id="postal_code" name="postal_code" disabled="true">
-                    <label for="postal_code">Zip Code</label>
-                </div>
-                <div class="input-field col s4">
-                    <input type="text" id="country" name="country" disabled="true">
-                    <label for="country">Country</label>
+                    <input id="country" name="country">
+                    <label for="country">Country/Region*</label>
                 </div>
             </div>
             <div class="row">
@@ -138,11 +138,10 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var elems = document.querySelectorAll('select');
-            M.FormSelect.init(elems);
-        });
-
+        let autocomplete;
+        let address1Field;
+        let address2Field;
+        let postalField;
         function togglePhoneFields() {
             var phoneType = document.getElementById('phone_type').value;
             var usPhoneField = document.getElementById('us_phone_field');
@@ -158,88 +157,97 @@
                 intlPhoneField.style.display = 'none';
             }
         }
-
-        var placeSearch, autocomplete;
-        var componentForm = {
-            street_number: 'short_name',
-            route: 'long_name',
-            locality: 'long_name',
-            administrative_area_level_1: 'short_name',
-            country: 'long_name',
-            postal_code: 'short_name'
-        };
-
         function initAutocomplete() {
-            autocomplete = new google.maps.places.Autocomplete(
-                (document.getElementById('autocomplete')), {
-                    types: ['geocode']
+            address1Field = document.querySelector("#address1_Field");
+            address2Field = document.querySelector("#address2_Field");
+            postalField = document.querySelector("#postcode");
+
+            autocomplete = new google.maps.places.Autocomplete(address1Field, {
+                    fields: ["address_components", "geometry"],
+                    types: ['address'],
                 });
+                address1Field.focus();
 
             autocomplete.addListener('place_changed', fillInAddress);
         }
 
         function fillInAddress() {
-            var place = autocomplete.getPlace();
+            const place = autocomplete.getPlace();
+            let address1 = "";
+            let postcode = "";
 
-            for (var component in componentForm) {
-                document.getElementById(component).value = '';
-                document.getElementById(component).disabled = false;
+            for (const component of place.address_components) {
+                const componentType = component.types[0];
+
+                switch (componentType) {
+                    case "street_number": {
+                      address1 = `${component.long_name} ${address1}`;
+                      break;
+                    }
+              
+                    case "route": {
+                      address1 += component.short_name;
+                      break;
+                    }
+              
+                    case "postal_code": {
+                      postcode = `${component.long_name}${postcode}`;
+                      break;
+                    }
+              
+                    case "postal_code_suffix": {
+                      postcode = `${postcode}-${component.long_name}`;
+                      break;
+                    }
+                    case "locality":
+                      document.querySelector("#locality").value = component.long_name;
+                      break;
+                    case "administrative_area_level_1": {
+                      document.querySelector("#state").value = component.short_name;
+                      break;
+                    }
+                    case "country":
+                      document.querySelector("#country").value = component.long_name;
+                      break;
+                  }
             }
 
-            for (var i = 0; i < place.address_components.length; i++) {
-                var addressType = place.address_components[i].types[0];
-                if (componentForm[addressType]) {
-                    var val = place.address_components[i][componentForm[addressType]];
-                    document.getElementById(addressType).value = val;
+            address1Field.value = address1;
+            postalField.value = postcode;
+            address2Field.focus();
+        }
+        window.initAutocomplete = initAutocomplete;
+
+        document.getElementById('myHomeCellForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+    
+            // Gather form data
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+    
+            // Send data to Zapier webhook
+            fetch('https://hooks.zapier.com/hooks/catch/20274139/2m3rmlo/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Handle success (e.g., show a success message)
+                    document.getElementById('responseMessage').innerText = 'Form submitted successfully!';
+                } else {
+                    // Handle error
+                    document.getElementById('responseMessage').innerText = 'Error submitting form.';
                 }
-            }
-        }
-
-        function geolocate() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var geolocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    var circle = new google.maps.Circle({
-                        center: geolocation,
-                        radius: position.coords.accuracy
-                    });
-                    autocomplete.setBounds(circle.getBounds());
-                });
-            }
-        }
-
-        initAutocomplete();
-
-        document.getElementById('myHomeCellForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            var formData = new FormData(this);
-            // Log form data to console
-          for (var pair of formData.entries()) {
-            console.log(pair[0]+ ': ' + pair[1]);
-          }
-          fetch('https://script.google.com/macros/s/AKfycbwSglDDbernCzpLPtF6LDwDy827F42uC85TCI5AxspZAJyQO5Gm9b6Me0t-zrxSrNnc/exec', {
-            method: 'POST',
-            //mode: 'no-cors',
-            body: formData
-          })
-          .then(response => {
-            // Check if the response is JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-              return response.json();
-            } else {
-              throw new Error('Server response is not JSON');
-            }
-          })
-          .then(data => {
-            document.getElementById('responseMessage').innerText = data.message;
-          })
-          .catch(error => {
-            console.error('Error:', error); // Log the error to the console
-            document.getElementById('responseMessage').innerText = 'An error occurred. Please try again.';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('responseMessage').innerText = 'Error submitting form.';
             });
         });
     </script>
